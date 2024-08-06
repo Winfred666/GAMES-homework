@@ -4,6 +4,8 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
+using namespace std;
+
 constexpr double MY_PI = 3.1415926;
 
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
@@ -25,8 +27,15 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
 
     // TODO: Implement this function
     // Create the model matrix for rotating the triangle around the Z axis.
+    //change angle to radient
+    rotation_angle = rotation_angle / 180 * MY_PI;
+    float cos_angle = cos(rotation_angle);
+    float sin_angle = sin(rotation_angle);
     // Then return it.
-
+    model << cos_angle, -sin_angle, 0, 0,
+             sin_angle, cos_angle, 0, 0,
+             0, 0, 1, 0,
+             0, 0, 0, 1;
     return model;
 }
 
@@ -34,15 +43,40 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar)
 {
     // Students will implement this function
-
     Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
-
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
+    float t = tan(eye_fov/2/180*MY_PI) * abs(zNear);
+    float r = t * aspect_ratio;
+    projection << zNear / r, 0, 0, 0,
+                  0, zNear / t, 0, 0,
+                  0, 0, (zNear + zFar) / (zNear - zFar), 2*zNear*zFar / (zNear - zFar),
+                  0, 0, -1, 0;
     // Then return it.
-
     return projection;
 }
+
+Eigen::Matrix4f get_rotation(Vector3f axis, float angle){
+    Eigen::Matrix4f rotation = Eigen::Matrix4f::Identity();
+    angle = angle / 180 * MY_PI;
+    float cos_angle = cos(angle);
+    float sin_angle = sin(angle);
+    float x = axis.x();
+    float y = axis.y();
+    float z = axis.z();
+    //using Rodrigues' rotation formula
+    Eigen::Matrix3f I = Eigen::Matrix3f::Identity();
+    Eigen::Matrix3f dualMat;
+    dualMat << 0, -z, y,
+               z, 0, -x,
+               -y, x, 0;
+    rotation.block<3,3>(0,0) = (cos_angle*I) + (1-cos_angle)*axis*axis.transpose() + sin_angle*dualMat;
+    return rotation;
+}
+
+#pragma warning(push)
+#pragma warning(disable: 4819)
+
 
 int main(int argc, const char** argv)
 {
@@ -62,7 +96,7 @@ int main(int argc, const char** argv)
 
     rst::rasterizer r(700, 700);
 
-    Eigen::Vector3f eye_pos = {0, 0, 5};
+    Eigen::Vector3f eye_pos = {0, 0, 10};
 
     std::vector<Eigen::Vector3f> pos{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
 
@@ -77,7 +111,9 @@ int main(int argc, const char** argv)
     if (command_line) {
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
-        r.set_model(get_model_matrix(angle));
+        //rotate by any axis
+        r.set_model(get_rotation(Vector3f(0, 0, 1), angle));
+
         r.set_view(get_view_matrix(eye_pos));
         r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
 
@@ -93,7 +129,9 @@ int main(int argc, const char** argv)
     while (key != 27) {
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
-        r.set_model(get_model_matrix(angle));
+        // rotate by any axis
+        r.set_model(get_rotation(Vector3f(0, 1, 0).normalized(), angle));
+
         r.set_view(get_view_matrix(eye_pos));
         r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
 
