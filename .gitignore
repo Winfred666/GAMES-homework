@@ -6,6 +6,7 @@
 # libs
 eigen-3.4.0/
 101_A8/CGL/
+101_A3/models/
 
 *.DS_Store
 .vscode/
