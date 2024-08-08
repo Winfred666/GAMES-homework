@@ -1,6 +1,8 @@
-cd 101_A3/build
+cd 101_A6/build
 
-C:/SeniorPrograming/VS2017/IDE/MSBuild/15.0/Bin/MSBuild.exe Rasterizer.sln /p:Configuration=Debug /p:Platform=x64 /target:Rasterizer
+SET NAME=RayTracing
 
-Debug\Rasterizer.exe output4_spot.png displacement
+C:/SeniorPrograming/VS2017/IDE/MSBuild/15.0/Bin/MSBuild.exe %NAME%.sln /p:Configuration=Debug /p:Platform=x64 /target:%NAME%
+
+Debug\%NAME%.exe
 

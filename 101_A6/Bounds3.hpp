@@ -95,8 +95,20 @@ inline bool Bounds3::IntersectP(const Ray& ray, const Vector3f& invDir,
 {
     // invDir: ray direction(x,y,z), invDir=(1.0/x,1.0/y,1.0/z), use this because Multiply is faster that Division
     // dirIsNeg: ray direction(x,y,z), dirIsNeg=[int(x>0),int(y>0),int(z>0)], use this to simplify your logic
-    // TODO test if ray bound intersects
-    
+    // TODO test if ray bound intersects, 
+    //that is,calc the time that ray hit every slab, and test if the hit time is in the range of the ray.
+    Vector3f t_hit_min = (pMin - ray.origin) * invDir;
+    Vector3f t_hit_max = (pMax - ray.origin) * invDir;
+    // is the ray toward negative, the max is the first hit, the min is the last hit, 
+    // and t_hit_max will be smaller, so need to swap.
+    for (int i = 0; i < 3; i++) {
+        if (dirIsNeg[i] == 1){ 
+            std::swap(t_hit_min[i], t_hit_max[i]); 
+        }
+    }
+    float t_enter = std::max({t_hit_min[0],t_hit_min[1],t_hit_min[2]});
+    float t_exit = std::min({t_hit_max[0],t_hit_max[1],t_hit_max[2]});
+    return (t_enter <= t_exit) && (t_exit >= 0);
 }
 
 inline Bounds3 Union(const Bounds3& b1, const Bounds3& b2)

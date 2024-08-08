@@ -1,4 +1,4 @@
-cd 101_A3
+cd 101_A6
 
 ::Check if the folder exists
 

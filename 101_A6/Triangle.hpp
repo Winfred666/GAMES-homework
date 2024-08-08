@@ -5,7 +5,9 @@
 #include "Material.hpp"
 #include "OBJ_Loader.hpp"
 #include "Object.hpp"
+
 #include "Triangle.hpp"
+
 #include <cassert>
 #include <array>
 
@@ -13,30 +15,16 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1,
                           const Vector3f& v2, const Vector3f& orig,
                           const Vector3f& dir, float& tnear, float& u, float& v)
 {
-    Vector3f edge1 = v1 - v0;
-    Vector3f edge2 = v2 - v0;
-    Vector3f pvec = crossProduct(dir, edge2);
-    float det = dotProduct(edge1, pvec);
-    if (det == 0 || det < 0)
-        return false;
-
-    Vector3f tvec = orig - v0;
-    u = dotProduct(tvec, pvec);
-    if (u < 0 || u > det)
-        return false;
-
-    Vector3f qvec = crossProduct(tvec, edge1);
-    v = dotProduct(dir, qvec);
-    if (v < 0 || u + v > det)
-        return false;
-
-    float invDet = 1 / det;
-
-    tnear = dotProduct(edge2, qvec) * invDet;
-    u *= invDet;
-    v *= invDet;
-
-    return true;
+    Vector3f E1 = v1 - v0;
+    Vector3f E2 = v2 - v0;
+    Vector3f S = orig - v0;
+    Vector3f S1 = crossProduct(dir, E2);
+    Vector3f S2 = crossProduct(S, E1);
+    float inv = 1/dotProduct(S1,E1);
+    tnear = inv * dotProduct(S2,E2);
+    u = inv * dotProduct(S1,S);
+    v = inv * dotProduct(S2,dir);
+    return (tnear > 0 && u >= 0 && v >= 0 && (u + v) <= 1);
 }
 
 class Triangle : public Object
@@ -121,9 +109,8 @@ public:
 
         std::vector<Object*> ptrs;
         for (auto& tri : triangles)
-            ptrs.push_back(&tri);
-
-        bvh = new BVHAccel(ptrs);
+            ptrs.push_back(&tri); // push the address of the triangle
+        bvh = new BVHAccel(ptrs); // build the BVH
     }
 
     bool intersect(const Ray& ray) { return true; }
@@ -175,14 +162,11 @@ public:
                     Vector3f(0.937, 0.937, 0.231), pattern);
     }
 
-    Intersection getIntersection(Ray ray)
-    {
+    Intersection getIntersection(Ray ray){
         Intersection intersec;
-
         if (bvh) {
             intersec = bvh->Intersect(ray);
         }
-
         return intersec;
     }
 
@@ -211,31 +195,36 @@ inline Bounds3 Triangle::getBounds() { return Union(Bounds3(v0, v1), v2); }
 inline Intersection Triangle::getIntersection(Ray ray)
 {
     Intersection inter;
-
-    if (dotProduct(ray.direction, normal) > 0)
+    if (dotProduct(ray.direction, normal) > 0) // the triangle is backfacing
         return inter;
     double u, v, t_tmp = 0;
     Vector3f pvec = crossProduct(ray.direction, e2);
+
     double det = dotProduct(e1, pvec);
     if (fabs(det) < EPSILON)
-        return inter;
-
+        return inter; // the ray is parallel to the triangle
     double det_inv = 1. / det;
     Vector3f tvec = ray.origin - v0;
     u = dotProduct(tvec, pvec) * det_inv;
     if (u < 0 || u > 1)
-        return inter;
+        return inter; // no intersection
     Vector3f qvec = crossProduct(tvec, e1);
     v = dotProduct(ray.direction, qvec) * det_inv;
+
+
     if (v < 0 || u + v > 1)
-        return inter;
+        return inter; // no intersection
     t_tmp = dotProduct(e2, qvec) * det_inv;
-
     // TODO find ray triangle intersection
-
-
-
-
+    if (t_tmp < 0)
+        return inter; // the triangle is behind
+    
+    inter.happened = true;
+    inter.coords = ray.origin + ray.direction * t_tmp; // the intersection point
+    inter.distance = t_tmp;
+    inter.obj = this; // the object that is intersected
+    inter.normal = normal; // normal of the triangle
+    inter.m = m;           // the material of the triangle
     return inter;
 }
 

@@ -8,6 +8,8 @@
 #include "Texture.hpp"
 #include "OBJ_Loader.h"
 
+Texture *global_texture = nullptr;
+
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -168,7 +170,7 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
 
 
 
-Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payload)
+Eigen::Vector3f displacement_fragment_shader(fragment_shader_payload& payload)
 {
     
     Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
@@ -220,8 +222,14 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
     // Normal n = normalize(TBN * ln)
     Eigen::Vector3f normal = (TBN * ln).normalized();
 
-    Eigen::Vector3f result_color = {0, 0, 0};
+    payload.normal = normal;
+    payload.view_pos = point;
 
+    //change to spot texture
+    // payload.texture = global_texture;
+    // return texture_fragment_shader(payload);
+
+    Eigen::Vector3f result_color = {0, 0, 0};
     for (auto& light : lights)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
@@ -293,6 +301,8 @@ Eigen::Vector3f bump_fragment_shader(fragment_shader_payload& payload)
 
     // just see how new normal like, and we can also apply the phong shading using it
     payload.normal = normal;
+    //change to spot texture
+    payload.texture = global_texture;
     return texture_fragment_shader(payload);
     // Eigen::Vector3f result_color = {0, 0, 0};
     // result_color = normal;
@@ -310,6 +320,8 @@ int main(int argc, const char** argv)
     std::string filename = "output.png";
     objl::Loader Loader;
     std::string obj_path = "../models/spot/";
+    
+    global_texture = new Texture(obj_path + "spot_texture.png");
 
     // Load .obj File
     bool loadout = Loader.LoadFile("../models/spot/spot_triangulated_good.obj");
@@ -330,7 +342,7 @@ int main(int argc, const char** argv)
 
     rst::rasterizer r(700, 700);
 
-    auto texture_path = "hmap.jpg"; // already have a texture.
+    auto texture_path = "hmap.jpg"; // depth texture for bumping and displacement.
     r.set_texture(Texture(obj_path + texture_path));
 
     std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = phong_fragment_shader;
@@ -427,5 +439,7 @@ int main(int argc, const char** argv)
         }
 
     }
+
+    delete global_texture;
     return 0;
 }

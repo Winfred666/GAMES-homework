@@ -18,38 +18,40 @@ void Renderer::Render(const Scene& scene)
 {
     std::vector<Vector3f> framebuffer(scene.width * scene.height);
 
-    float scale = tan(deg2rad(scene.fov * 0.5));
+    float scale = std::tan(deg2rad(scene.fov * 0.5f)); // tan(FOV/2) = height / (2*z-distance), here z-distance is 1
     float imageAspectRatio = scene.width / (float)scene.height;
-    Vector3f eye_pos(-1, 5, 10);
+
+    // Use this variable as the eye position to start your rays.
+    // this little framework mistake delay me for nearly 2 hours !!!
+    Vector3f eye_pos(-1, 5, 10); // not not modify to looking from this point ?
     int m = 0;
-    for (uint32_t j = 0; j < scene.height; ++j) {
-        for (uint32_t i = 0; i < scene.width; ++i) {
+    for (int j = 0; j < scene.height; ++j)
+    {
+        for (int i = 0; i < scene.width; ++i)
+        {
             // generate primary ray direction
-            float x = (2 * (i + 0.5) / (float)scene.width - 1) *
-                      imageAspectRatio * scale;
-            float y = (1 - 2 * (j + 0.5) / (float)scene.height) * scale;
-            // TODO: Find the x and y positions of the current pixel to get the
-            // direction
-            //  vector that passes through it.
-            // Also, don't forget to multiply both of them with the variable
-            // *scale*, and x (horizontal) variable with the *imageAspectRatio*
-
-            // Don't forget to normalize this direction!
-
+            float x;
+            float y;
+            // TODO: Find the x and y positions of the current pixel to get the direction
+            // vector that passes through it, shoot out radiance ray from origin point(eye).
+            x = scale*imageAspectRatio*((i + 0.5f) / scene.width - 0.5f) * 2;
+            y = - scale*((j + 0.5f) / scene.height - 0.5f) * 2; // tilted camera.
+            // z distance |n| = 1
+            Vector3f dir = normalize(Vector3f(x, y, -1)); // Don't forget to normalize this direction!
+            framebuffer[m++] = scene.castRay(Ray(eye_pos, dir), 0); // the depth is 0 because not using it(fade out).
         }
         UpdateProgress(j / (float)scene.height);
     }
-    UpdateProgress(1.f);
 
     // save framebuffer to file
     FILE* fp = fopen("binary.ppm", "wb");
     (void)fprintf(fp, "P6\n%d %d\n255\n", scene.width, scene.height);
     for (auto i = 0; i < scene.height * scene.width; ++i) {
         static unsigned char color[3];
-        color[0] = (unsigned char)(255 * clamp(0, 1, framebuffer[i].x));
-        color[1] = (unsigned char)(255 * clamp(0, 1, framebuffer[i].y));
-        color[2] = (unsigned char)(255 * clamp(0, 1, framebuffer[i].z));
+        color[0] = (char)(255 * clamp(0, 1, framebuffer[i].x));
+        color[1] = (char)(255 * clamp(0, 1, framebuffer[i].y));
+        color[2] = (char)(255 * clamp(0, 1, framebuffer[i].z));
         fwrite(color, 1, 3, fp);
     }
-    fclose(fp);    
+    fclose(fp);
 }
