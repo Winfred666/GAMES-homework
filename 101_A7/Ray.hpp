@@ -8,7 +8,7 @@
 struct Ray{
     //Destination = origin + t*direction
     Vector3f origin;
-    Vector3f direction, direction_inv;
+    Vector3f direction, direction_inv; // for a eye ray, direction is w_o, for a light ray, direction is -w_i
     double t;//transportation time,
     double t_min, t_max;
 

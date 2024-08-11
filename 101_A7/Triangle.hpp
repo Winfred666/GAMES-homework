@@ -232,28 +232,37 @@ inline Bounds3 Triangle::getBounds() { return Union(Bounds3(v0, v1), v2); }
 inline Intersection Triangle::getIntersection(Ray ray)
 {
     Intersection inter;
-
-    if (dotProduct(ray.direction, normal) > 0)
+    if (dotProduct(ray.direction, normal) > 0) // the triangle is backfacing
         return inter;
     double u, v, t_tmp = 0;
     Vector3f pvec = crossProduct(ray.direction, e2);
+
     double det = dotProduct(e1, pvec);
     if (fabs(det) < EPSILON)
-        return inter;
-
+        return inter; // the ray is parallel to the triangle
     double det_inv = 1. / det;
     Vector3f tvec = ray.origin - v0;
     u = dotProduct(tvec, pvec) * det_inv;
     if (u < 0 || u > 1)
-        return inter;
+        return inter; // no intersection
     Vector3f qvec = crossProduct(tvec, e1);
     v = dotProduct(ray.direction, qvec) * det_inv;
+
+
     if (v < 0 || u + v > 1)
-        return inter;
+        return inter; // no intersection
     t_tmp = dotProduct(e2, qvec) * det_inv;
-
     // TODO find ray triangle intersection
-
+    if (t_tmp < 0)
+        return inter; // the triangle is behind
+    
+    inter.happened = true;
+    inter.coords = ray.origin + ray.direction * t_tmp; // the intersection point
+    inter.distance = t_tmp;
+    inter.obj = this; // the object that is intersected
+    inter.normal = normal; // normal of the triangle
+    inter.m = m;           // the material of the triangle
+    inter.emit = m->getEmission(); // the emission of the material
     return inter;
 }
 
