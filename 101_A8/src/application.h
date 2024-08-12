@@ -23,11 +23,11 @@ struct AppConfig {
   AppConfig() {
     // Rope config variables
     mass = 1;
-    ks = 100;
+    ks = 100; // too big, the rope will be stiff
 
     // Environment variables
     gravity = Vector2D(0, -1);
-    steps_per_frame = 64;
+    steps_per_frame = 2000;
   }
 
   float mass;
