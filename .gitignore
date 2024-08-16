@@ -13,6 +13,8 @@ eigen-3.4.0/
 # Prerequisites
 *.d
 
+*.unitypackage
+
 # Compiled Object files
 *.slo
 *.lo
