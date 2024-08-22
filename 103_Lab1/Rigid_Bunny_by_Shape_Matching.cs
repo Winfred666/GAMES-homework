@@ -198,7 +198,7 @@ public class Rigid_Bunny_by_Shape_Matching : MonoBehaviour
 				Vector3 v_n =  N*Vector3.Dot(V[i], N);
 				Vector3 v_t = V[i] - v_n;
 				// use impulse to update the velocity
-				X[i] = X[i] + N * dist;
+				X[i] = X[i] - N * dist;
 
 				float a = 0;
 				if(v_t.magnitude > 0.001) a = 1 - friction*(1 + restitution)*v_n.magnitude/v_t.magnitude;
