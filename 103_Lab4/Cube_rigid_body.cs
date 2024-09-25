@@ -134,6 +134,9 @@ public class Cube_rigid_body :MonoBehaviour
 
     public void update_position(){
         if(Icube.is_drag_by_mouse()){
+            // also need to reset impulse, or the water impulse will add up,
+            // and the cube will fly away when the mouse is released
+            outer_force = Vector3.zero;
             w = Vector3.zero;
             v = Vector3.zero;
             return;
@@ -165,7 +168,9 @@ public class Cube_rigid_body :MonoBehaviour
         v_num ++;
     }
 
+    // this is called by wave, to apply bouyancy to the cube
     public void apply_new_force(Vector3 force, Vector3 position){
+        if(Icube.is_drag_by_mouse())return;
         Vector3 Rr_i =  rotation_matrix.MultiplyVector(position - transform.position);
         outer_force += force;
         outer_torque += Vector3.Cross(Rr_i, force);
